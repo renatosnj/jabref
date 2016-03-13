@@ -17,7 +17,7 @@ import net.sf.jabref.pdfimport.PdfImporter.ImportPdfFilesResult;
 import net.sf.jabref.JabRef;
 import net.sf.jabref.external.ExternalFileType;
 import net.sf.jabref.external.ExternalFileTypes;
-import net.sf.jabref.logic.xmp.EncryptionNotSupportedException;
+import net.sf.jabref.logic.xmp.EncryptedPdfsNotSupportedException;
 import net.sf.jabref.logic.xmp.XMPUtil;
 
 /**
@@ -123,7 +123,7 @@ public class EntryFromPDFCreator extends EntryFromFileCreator {
         try {
             List<BibEntry> entrys = XMPUtil.readXMP(aFile.getAbsoluteFile());
             addEntrysToEntry(entry, entrys);
-        } catch (EncryptionNotSupportedException e) {
+        } catch (EncryptedPdfsNotSupportedException e) {
             // no canceling here, just no data added.
         } catch (IOException e) {
             // no canceling here, just no data added.
