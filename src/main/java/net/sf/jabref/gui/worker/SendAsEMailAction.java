@@ -24,17 +24,19 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 
-import net.sf.jabref.*;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
+import net.sf.jabref.Globals;
+import net.sf.jabref.JabRefPreferences;
+import net.sf.jabref.bibtex.BibEntryWriter;
 import net.sf.jabref.exporter.LatexFieldFormatter;
 import net.sf.jabref.gui.BasePanel;
 import net.sf.jabref.gui.JabRefFrame;
-import net.sf.jabref.bibtex.BibEntryWriter;
+import net.sf.jabref.gui.desktop.JabRefDesktop;
 import net.sf.jabref.logic.l10n.Localization;
 import net.sf.jabref.model.entry.BibEntry;
-import net.sf.jabref.gui.desktop.JabRefDesktop;
 import net.sf.jabref.util.Util;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 
 /**
  * Sends the selected entry as email - by Oliver Kopp
@@ -65,18 +67,39 @@ public class SendAsEMailAction extends AbstractWorker {
             return;
         }
 
+        URI uriMailTo = generateUriMailTo();
+
+        Desktop desktop = Desktop.getDesktop();
+        try {
+            desktop.mail(uriMailTo);
+        } catch (IOException e) {
+            message = Localization.lang("Error creating email");
+            LOGGER.warn(message, e);
+            return;
+        }
+
+        message = String.format("%s: %d",
+                Localization.lang("Entries added to an email"),
+                frame.getCurrentBasePanel().getSelectedEntries().length);
+    }
+
+    @Override
+    public void update() {
+        frame.output(message);
+    }
+
+    public URI generateUriMailTo() {
         BasePanel panel = frame.getCurrentBasePanel();
         if (panel == null) {
-            return;
+            return null;
         }
         if (panel.getSelectedEntries().length == 0) {
             message = Localization.lang("No entries selected.");
-            return;
+            return null;
         }
 
         StringWriter sw = new StringWriter();
         BibEntry[] bes = panel.getSelectedEntries();
-
         // write the entries using sw, which is used later to form the email content
         BibEntryWriter bibtexEntryWriter = new BibEntryWriter(new LatexFieldFormatter(), true);
 
@@ -92,9 +115,11 @@ public class SendAsEMailAction extends AbstractWorker {
 
         // open folders is needed to indirectly support email programs, which cannot handle
         //   the unofficial "mailto:attachment" property
-        boolean openFolders = JabRefPreferences.getInstance().getBoolean(JabRefPreferences.OPEN_FOLDERS_OF_ATTACHED_FILES);
+        boolean openFolders = JabRefPreferences.getInstance()
+                .getBoolean(JabRefPreferences.OPEN_FOLDERS_OF_ATTACHED_FILES);
 
-        List<File> fileList = Util.getListOfLinkedFiles(bes, frame.getCurrentBasePanel().metaData().getFileDirectory(Globals.FILE_FIELD));
+        List<File> fileList = Util.getListOfLinkedFiles(bes,
+                frame.getCurrentBasePanel().metaData().getFileDirectory(Globals.FILE_FIELD));
         for (File f : fileList) {
             attachments.add(f.getPath());
             if (openFolders) {
@@ -114,31 +139,13 @@ public class SendAsEMailAction extends AbstractWorker {
             mailTo = mailTo.concat("\"");
         }
 
-        URI uriMailTo;
         try {
-            uriMailTo = new URI("mailto", mailTo, null);
+            return new URI("mailto", mailTo, null);
         } catch (URISyntaxException e1) {
             message = Localization.lang("Error creating email");
             LOGGER.warn(message, e1);
-            return;
+            return null;
         }
-
-        Desktop desktop = Desktop.getDesktop();
-        try {
-            desktop.mail(uriMailTo);
-        } catch (IOException e) {
-            message = Localization.lang("Error creating email");
-            LOGGER.warn(message, e);
-            return;
-        }
-
-        message = String.format("%s: %d",
-                Localization.lang("Entries added to an email"), bes.length);
-    }
-
-    @Override
-    public void update() {
-        frame.output(message);
     }
 
 }
