@@ -17,7 +17,6 @@ package net.sf.jabref.gui.labelpattern;
 
 import net.sf.jabref.Globals;
 import net.sf.jabref.JabRefPreferences;
-import net.sf.jabref.model.EntryTypes;
 import net.sf.jabref.gui.BasePanel;
 import net.sf.jabref.gui.IconTheme;
 import net.sf.jabref.gui.help.HelpAction;
@@ -104,10 +103,11 @@ public class LabelPatternPanel extends JPanel {
         gbl.setConstraints(btnDefault, con);
         pan.add(btnDefault);
 
+        /* NullPointerException here
         for (EntryType type : EntryTypes.getAllValues(panel.getBibDatabaseContext().getMode())) {
             textFields.put(type.getName().toLowerCase(), addEntryType(pan, type, y));
             y++;
-        }
+        }*/
 
         con.fill = GridBagConstraints.BOTH;
         con.gridx = 0;
