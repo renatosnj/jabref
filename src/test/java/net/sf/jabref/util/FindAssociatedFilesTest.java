@@ -21,9 +21,10 @@ import net.sf.jabref.model.entry.BibtexEntryTypes;
 public class FindAssociatedFilesTest {
 
     // diretorio de arquivos
-    private final String filesDirectory = "/src/test/resources/net/sf/jabref/util/findAssociatedFiles";
-    private final String filesDirectory2 = "D:/AppData/dev/git/jabref/src/test/resources/net/sf/jabref/util/findAssociatedFiles";
-
+    String s = File.separator;
+    private final String filesDirectory = System.getProperty("user.dir") + s + "src" + s + "test" + s + "resources" + s
+            + "net" + s + "sf" + s + "jabref"
+            + s + "util" + s + "findAssociatedFiles";
 
     @BeforeClass
     public static void setUpBeforeClass() {
@@ -38,6 +39,7 @@ public class FindAssociatedFilesTest {
     @Test
     public void testFindAssociatedFilesInitBibkey() {
 
+        System.out.println(System.getProperty("user.dir"));
         Globals.prefs.putBoolean(JabRefPreferences.AUTOLINK_EXACT_KEY_ONLY, Boolean.FALSE);
 
         Map<BibEntry, List<File>> retorno = executandoMetodo();
@@ -117,7 +119,7 @@ public class FindAssociatedFilesTest {
         extensions.add("pdf");
 
         // Criando uma lista com o diretorio de arquivos
-        List<File> directories = Arrays.asList(new File(filesDirectory2));
+        List<File> directories = Arrays.asList(new File(filesDirectory));
 
         // Simulando entradas
         Collection<BibEntry> entries = gerarEntradas();
