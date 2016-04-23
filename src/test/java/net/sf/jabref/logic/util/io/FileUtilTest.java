@@ -83,4 +83,29 @@ public class FileUtilTest {
         List<String> result = FileUtil.uniquePathSubstrings(paths);
         assertEquals(uniqPath, result);
     }
+
+    /**
+     *  Testa o encurtamento do endereco de um arquivo, dado um diretorio
+     *      (1) Se o diretorio for compativel, o encurtamento e bem sucedido
+     *      (2) Se o diretorio for incompativel, o mesmo arquivo e retornado
+     */
+    @Test
+    public void shortenFileName() {
+        // gerando urls para teste
+        String s = File.separator;
+        String projectDir = System.getProperty("user.dir") + s;
+        String fileFolder = "src" + s + "test" + s + "resources" + s + "encrypted.pdf";
+        String completeURL = projectDir + fileFolder;
+        String[] dir = {projectDir};
+        File file = new File(completeURL);
+
+        // Teste se o encurtamento e bem sucedido
+        File result = FileUtil.shortenFileName(file, dir);
+        assertEquals(fileFolder, result.getPath());
+
+        // Teste se o encurtamento nao e possivel
+        String[] incompatibleDir = {projectDir + "bun"};
+        result = FileUtil.shortenFileName(file, incompatibleDir);
+        assertEquals(file, result);
+    }
 }
