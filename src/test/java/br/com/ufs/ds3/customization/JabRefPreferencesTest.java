@@ -38,4 +38,10 @@ public class JabRefPreferencesTest {
 
         assertEquals(expected, actual);
     }
+
+    @Test
+    public void testPutBoolean() {
+        preferencias.putBoolean(JabRefPreferences.BIB_LOC_AS_PRIMARY_DIR, true);
+        assertEquals(preferencias.getBoolean(JabRefPreferences.BIB_LOC_AS_PRIMARY_DIR), true);
+    }
 }
