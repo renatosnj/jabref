@@ -6,19 +6,13 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
-
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.mockito.Mockito;
-
 import net.sf.jabref.Globals;
 import net.sf.jabref.JabRefPreferences;
-import net.sf.jabref.logic.util.io.FileFinder.FindFilesWrapper;
 import net.sf.jabref.model.entry.BibEntry;
 import net.sf.jabref.model.entry.BibtexEntryTypes;
 
@@ -28,7 +22,6 @@ public class FindAssociatedFilesTest {
     String s = File.separator;
     private final String filesDirectory = System.getProperty("user.dir") + s + "src" + s + "test" + s + "resources" + s
             + "net" + s + "sf" + s + "jabref" + s + "util" + s + "findAssociatedFiles";
-
 
     @BeforeClass
     public static void setUpBeforeClass() {
@@ -42,11 +35,9 @@ public class FindAssociatedFilesTest {
      */
     @Test
     public void testFindAssociatedFilesInitBibkey() {
-
-        System.out.println(System.getProperty("user.dir"));
         Globals.prefs.putBoolean(JabRefPreferences.AUTOLINK_EXACT_KEY_ONLY, Boolean.FALSE);
 
-        Map<BibEntry, List<File>> retorno = executandoMetodo();
+        Map<BibEntry, List<File>> retorno = executandoMetodo(BibTexKeyComecaCom());
 
         for (Entry<BibEntry, List<File>> entryFilePair : retorno.entrySet()) {
             BibEntry entrada = entryFilePair.getKey();
@@ -86,7 +77,7 @@ public class FindAssociatedFilesTest {
 
         Globals.prefs.putBoolean(JabRefPreferences.AUTOLINK_EXACT_KEY_ONLY, Boolean.TRUE);
 
-        Map<BibEntry, List<File>> retorno = executandoMetodo();
+        Map<BibEntry, List<File>> retorno = executandoMetodo(BibTexKeyComecaCom());
 
         for (Entry<BibEntry, List<File>> entryFilePair : retorno.entrySet()) {
             BibEntry entrada = entryFilePair.getKey();
@@ -118,28 +109,12 @@ public class FindAssociatedFilesTest {
      * Executa  findAssociatedFiles e retorna a associacao
      * OBS.: Achei necessario refatorar, pois uso nos dois casos de teste
      */
-    private Map<BibEntry, List<File>> executandoMetodo() {
-        //Criando Referencias a arquivos que serao retornadas pelo findFile
-        Set<File> filesWithExtension = new HashSet<>();
-        File teste1 = new File(filesDirectory + s + "comecaComABibTexKey.pdf");
-        filesWithExtension.add(teste1);
-        File teste2 = new File(filesDirectory + s + "exatamenteABibTexKey.pdf");
-        filesWithExtension.add(teste2);
-        File teste3 = new File(filesDirectory + s + "semCorrepondenciaComABibTexKey.pdf");
-        filesWithExtension.add(teste3);
-
-        FindFilesWrapper test = Mockito.mock(FindFilesWrapper.class);
-
+    private Map<BibEntry, List<File>> executandoMetodo(Collection<BibEntry> entries) {
         Collection<String> extensions = new ArrayList<>();
         extensions.add("pdf");
 
         // Criando uma lista com o diretorio de arquivos
         List<File> directories = Arrays.asList(new File(filesDirectory));
-
-        Mockito.when(test.findFiles(extensions, directories)).thenReturn(filesWithExtension);
-
-        // Simulando entradas
-        Collection<BibEntry> entries = gerarEntradas();
 
         Map<BibEntry, List<File>> retorno;
         retorno = Util.findAssociatedFiles(entries, extensions, directories);
@@ -153,29 +128,35 @@ public class FindAssociatedFilesTest {
      *      (3) BibTexKey sem correspondencia de arquivo
      *      (4) BibEntry sem BibTexKey
      */
-    private Collection<BibEntry> gerarEntradas() {
+    private Collection<BibEntry> BibTextVazio() {
         Collection<BibEntry> entries = new ArrayList<>();
+        BibEntry semBibTexKey = new BibEntry("000000003", BibtexEntryTypes.ARTICLE);
+        semBibTexKey.setField("bibtexkey", "");
+        entries.add(semBibTexKey);
+        return entries;
+    }
 
-        // (1)
-        BibEntry correspondeciaInicio = new BibEntry("00000001", BibtexEntryTypes.ARTICLE);
-        correspondeciaInicio.setField("bibtexkey", "comecaCom");
-        entries.add(correspondeciaInicio);
-
-        // (2)
-        BibEntry corespondeciaExata = new BibEntry("000000002", BibtexEntryTypes.ARTICLE);
-        corespondeciaExata.setField("bibtexkey", "exatamenteABibTexKey");
-        entries.add(corespondeciaExata);
-
-        // (3)
+    private Collection<BibEntry> BibTexKeySemCorrespondencia() {
+        Collection<BibEntry> entries = new ArrayList<>();
         BibEntry semCorrespondencia = new BibEntry("000000003", BibtexEntryTypes.ARTICLE);
         semCorrespondencia.setField("bibtexkey", "semCorrespondencia");
         entries.add(semCorrespondencia);
+        return entries;
+    }
 
-        // (4)
-        BibEntry semBibTexKey = new BibEntry("000000004", BibtexEntryTypes.ARTICLE);
-        semBibTexKey.setField("bibtexkey", "");
-        entries.add(semBibTexKey);
+    private Collection<BibEntry> BibTexKeyNomeExato() {
+        Collection<BibEntry> entries = new ArrayList<>();
+        BibEntry corespondeciaExata = new BibEntry("000000002", BibtexEntryTypes.ARTICLE);
+        corespondeciaExata.setField("bibtexkey", "exatamenteABibTexKey");
+        entries.add(corespondeciaExata);
+        return entries;
+    }
 
+    private Collection<BibEntry> BibTexKeyComecaCom() {
+        Collection<BibEntry> entries = new ArrayList<>();
+        BibEntry correspondeciaInicio = new BibEntry("00000001", BibtexEntryTypes.ARTICLE);
+        correspondeciaInicio.setField("bibtexkey", "comecaCom");
+        entries.add(correspondeciaInicio);
         return entries;
     }
 
