@@ -16,6 +16,31 @@ import net.sf.jabref.JabRefPreferences;
 import net.sf.jabref.model.entry.BibEntry;
 import net.sf.jabref.model.entry.BibtexEntryTypes;
 
+/**
+ *  Este metodo depende uma opcao das preferencias, chamada
+ *  AUTOLINK_EXACT_KEY_ONLY (Variavel booleanda). Ela define
+ *  que ao tentar encontrar os arquivos automaticamente, o
+ *  JabRef deve: associar arquivos que tenham os nomes
+ *  exatamente identicos a BibTexKey da BibEntry (caso
+ *  seja TRUE); ou associar arquivos que comecem com a
+ *  BibTexKey da BibEntry.
+ *
+ *  Para se referir a esta distincao, os metodos foram
+ *  nomeados da seguinte maneira:
+ *  AUTOLINK_EXACT_KEY_ONLY = FALSE -> autolinkBuscaChaveNoInicio
+ *  AUTOLINK_EXACT_KEY_ONLY = FALSE -> autolinkBuscaChaveExata
+ *
+ *  Logo apos exite o tipo de BibTexKey que esta sendo passada
+ *  para teste:
+ *  KeyExata -> existe um arquivo nomeado com a BibTexKey
+ *  KeyNoInicio -> Existe um arquivo que seu nome comeca com
+ *      a BibTexKey
+ *  KeySemCorrespondencia -> nao existe um arquivo nomeado com a
+ *       BibTexKey
+ *  KeyVazia -> BibTexKey == ""
+ *  KeyNula -> BibTexKey nula
+ *  EntryNula -> Não apenas a BibTexKey e nula, mas toda a BibEntry
+ */
 public class FindAssociatedFilesTest {
 
     // diretorio de arquivos
@@ -23,91 +48,221 @@ public class FindAssociatedFilesTest {
     private final String filesDirectory = System.getProperty("user.dir") + s + "src" + s + "test" + s + "resources" + s
             + "net" + s + "sf" + s + "jabref" + s + "util" + s + "findAssociatedFiles";
 
+
     @BeforeClass
     public static void setUpBeforeClass() {
         Globals.prefs = JabRefPreferences.getInstance();
     }
 
     /**
-     *  Exercita os caminhos ativos quando a preferencia
-     *  de arquivo ter o nome comecando com a BibTexKey
-     *  esta habilitada
+     *  Exercita os caminhos quando AUTOLINK_EXACT_KEY_ONLY = FALSE
+     *  Destinam-se a testar todas as condicoes do FOR interno
+     *  da condicao:
+     *  "if (!exactOnly)"
+     */
+
+    /**
+     * Testa caminho quando a condicao (abaixo) e satisfeita:
+     * if (name.startsWith(citeKey))
      */
     @Test
-    public void testFindAssociatedFilesInitBibkey() {
+    public void autolinkBuscaChaveNoInicioKeyNoInicio() {
         Globals.prefs.putBoolean(JabRefPreferences.AUTOLINK_EXACT_KEY_ONLY, Boolean.FALSE);
 
         Map<BibEntry, List<File>> retorno = executandoMetodo(BibTexKeyComecaCom());
 
-        for (Entry<BibEntry, List<File>> entryFilePair : retorno.entrySet()) {
-            BibEntry entrada = entryFilePair.getKey();
-            List<File> files = entryFilePair.getValue();
-            if (entrada.getCiteKey().equals("comecaComABibTexKey")) {
-                // Certifica-se que os que o aquivo que comeca com a
-                // BibTexKey foi associado corretamente
-                assertFalse(files.isEmpty());
-                assertEquals(files.size(), 1);
-                assertEquals(files.get(0).getName(), "comecaComABibTexKey.pdf");
-            } else if (entrada.getCiteKey().equals("exatamenteABibTexKey")) {
-                // Certifica-se que os arquivos que tem exatamente a
-                // BibTexKey como nome foram associados
-                assertFalse(files.isEmpty());
-                assertEquals(files.size(), 1);
-                assertEquals(files.get(0).getName(), "exatamenteABibTexKey.pdf");
-            } else if (entrada.getCiteKey().equals("semCorrespondencia")) {
-                // Certifica-se que Entradas sem arquivos com nomes
-                // correspondentes com a BibTexKey continuam
-                // sem associacao
-                assertTrue(files.isEmpty());
-            } else if (entrada.getCiteKey().equals("")) {
-                // Certifica-se que Entradas sem BibTexKey continuam
-                // sem associacao
-                assertTrue(files.isEmpty());
-            }
-        }
+        Entry<BibEntry, List<File>> entryFilePair = retorno.entrySet().iterator().next();
+        List<File> files = entryFilePair.getValue();
+        assertFalse(files.isEmpty());
+        assertEquals(files.size(), 1);
+        assertEquals(files.get(0).getName(), "comecaComABibTexKey.pdf");
     }
 
     /**
-     *  Exercita os caminhos ativos quando a preferencia
-     *  de arquivo ter o nome exatamente igual a BibTexKey
-     *  esta habilitada
+     * Testa caminho quando a condicao (abaixo) e satisfeita por
+     * outro tipo de entrada:
+     * if (name.startsWith(citeKey))
      */
     @Test
-    public void testFindAssociatedFilesExactlyBibkey() {
+    public void autolinkBuscaChaveNoInicioKeyExata() {
+        Globals.prefs.putBoolean(JabRefPreferences.AUTOLINK_EXACT_KEY_ONLY, Boolean.FALSE);
 
+        Map<BibEntry, List<File>> retorno = executandoMetodo(BibTexKeyNomeExato());
+
+        Entry<BibEntry, List<File>> entryFilePair = retorno.entrySet().iterator().next();
+        List<File> files = entryFilePair.getValue();
+        assertFalse(files.isEmpty());
+        assertEquals(files.size(), 1);
+        assertEquals(files.get(0).getName(), "exatamenteABibTexKey.pdf");
+    }
+
+    /**
+     * Testa caminho quando a condicao (abaixo) NAO e satisfeita:
+     * if (name.startsWith(citeKey))
+     */
+    @Test
+    public void autolinkBuscaChaveNoInicioKeySemCorrespondencia() {
+        Globals.prefs.putBoolean(JabRefPreferences.AUTOLINK_EXACT_KEY_ONLY, Boolean.FALSE);
+
+        Map<BibEntry, List<File>> retorno = executandoMetodo(BibTexKeySemCorrespondencia());
+
+        Entry<BibEntry, List<File>> entryFilePair = retorno.entrySet().iterator().next();
+        List<File> files = entryFilePair.getValue();
+        assertTrue(files.isEmpty());
+    }
+
+    /**
+     * Testa condicao !citeKey.isEmpty() do IF:
+     * if ((citeKey != null) && !citeKey.isEmpty())
+     *
+     */
+    @Test
+    public void autolinkBuscaChaveNoInicioKeyVazia() {
+        Globals.prefs.putBoolean(JabRefPreferences.AUTOLINK_EXACT_KEY_ONLY, Boolean.FALSE);
+
+        Map<BibEntry, List<File>> retorno = executandoMetodo(BibTextVazio());
+
+        Entry<BibEntry, List<File>> entryFilePair = retorno.entrySet().iterator().next();
+        List<File> files = entryFilePair.getValue();
+        assertTrue(files.isEmpty());
+    }
+
+    /**
+     * Testa condicao citeKey != null do IF:
+     * if ((citeKey != null) && !citeKey.isEmpty())
+     *
+     */
+    @Test
+    public void autolinkBuscaChaveNoInicioKeyNula() {
+        Globals.prefs.putBoolean(JabRefPreferences.AUTOLINK_EXACT_KEY_ONLY, Boolean.FALSE);
+
+        Map<BibEntry, List<File>> retorno = executandoMetodo(BibTextCiteKeyNull());
+
+        Entry<BibEntry, List<File>> entryFilePair = retorno.entrySet().iterator().next();
+        List<File> files = entryFilePair.getValue();
+        assertTrue(files.isEmpty());
+    }
+
+    /**
+     * Testa comportamento do metodo quando a entrada e nula
+     */
+    @Test
+    public void autolinkBuscaChaveNoInicioEntryNula() {
+        Globals.prefs.putBoolean(JabRefPreferences.AUTOLINK_EXACT_KEY_ONLY, Boolean.FALSE);
+
+        Map<BibEntry, List<File>> retorno = executandoMetodo(BibTextCiteKeyNull());
+
+        Entry<BibEntry, List<File>> entryFilePair = retorno.entrySet().iterator().next();
+        List<File> files = entryFilePair.getValue();
+        assertTrue(files.isEmpty());
+    }
+
+    /**
+     *  Exercita os caminhos quando AUTOLINK_EXACT_KEY_ONLY = TRUE
+     *  Destina-se a testar as condicoes do primeiro for da interacao:
+     *  nextFile: for (File file : filesWithExtension)
+     */
+
+    /**
+     * Testa caminho quando a condicao (abaixo) e satisfeita:
+     * if (name.substring(0, dot).equals(citeKey))
+     */
+    @Test
+    public void autolinkBuscaChaveExataKeyNoInicio() {
         Globals.prefs.putBoolean(JabRefPreferences.AUTOLINK_EXACT_KEY_ONLY, Boolean.TRUE);
 
         Map<BibEntry, List<File>> retorno = executandoMetodo(BibTexKeyComecaCom());
 
-        for (Entry<BibEntry, List<File>> entryFilePair : retorno.entrySet()) {
-            BibEntry entrada = entryFilePair.getKey();
-            List<File> files = entryFilePair.getValue();
-            if (entrada.getCiteKey().equals("comecaCom")) {
-                // Certifica-se que os arquivos que nao tem
-                // a BibTexKey como seu nome, nao foram associados
-                assertTrue(files.isEmpty());
-            } else if (entrada.getCiteKey().equals("exatamenteABibTexKey")) {
-                // Certifica-se que os arquivos que tem exatamente a
-                // BibTexKey como nome foram associados
-                assertFalse(files.isEmpty());
-                assertEquals(files.size(), 1);
-                assertEquals(files.get(0).getName(), "exatamenteABibTexKey.pdf");
-            } else if (entrada.getCiteKey().equals("semCorrespondencia")) {
-                // Certifica-se que Entradas sem arquivos com nomes
-                // correspondentes com a BibTexKey continuam
-                // sem associacao
-                assertTrue(files.isEmpty());
-            } else if (entrada.getCiteKey().equals("")) {
-                // Certifica-se que Entradas sem BibTexKey continuam
-                // sem associacao
-                assertTrue(files.isEmpty());
-            }
-        }
+        Entry<BibEntry, List<File>> entryFilePair = retorno.entrySet().iterator().next();
+        List<File> files = entryFilePair.getValue();
+        assertTrue(files.isEmpty());
+    }
+
+    /**
+     * Testa caminho quando a condicao (abaixo) NAO e satisfeita:
+     * if (name.substring(0, dot).equals(citeKey))
+     */
+    @Test
+    public void autolinkBuscaChaveExataKeyExata() {
+        Globals.prefs.putBoolean(JabRefPreferences.AUTOLINK_EXACT_KEY_ONLY, Boolean.TRUE);
+
+        Map<BibEntry, List<File>> retorno = executandoMetodo(BibTexKeyNomeExato());
+
+        Entry<BibEntry, List<File>> entryFilePair = retorno.entrySet().iterator().next();
+        List<File> files = entryFilePair.getValue();
+        assertFalse(files.isEmpty());
+        assertEquals(files.size(), 1);
+        assertEquals(files.get(0).getName(), "exatamenteABibTexKey.pdf");
+    }
+
+
+    /**
+     * Testa caminho quando a condicao (abaixo) NAO e satisfeita, por
+     * nao haver arquivo correspondente a BibEntry:
+     * if (name.substring(0, dot).equals(citeKey))
+     */
+    @Test
+    public void autolinkBuscaChaveExataKeySemCorrespondencia() {
+        Globals.prefs.putBoolean(JabRefPreferences.AUTOLINK_EXACT_KEY_ONLY, Boolean.TRUE);
+
+        Map<BibEntry, List<File>> retorno = executandoMetodo(BibTexKeySemCorrespondencia());
+
+        Entry<BibEntry, List<File>> entryFilePair = retorno.entrySet().iterator().next();
+        List<File> files = entryFilePair.getValue();
+        assertTrue(files.isEmpty());
+    }
+
+    /**
+     * Testa condicao !citeKey.isEmpty() do IF:
+     * if ((citeKey != null) && !citeKey.isEmpty())
+     *
+     */
+    @Test
+    public void autolinkBuscaChaveExataKeyVazia() {
+        Globals.prefs.putBoolean(JabRefPreferences.AUTOLINK_EXACT_KEY_ONLY, Boolean.TRUE);
+
+        Map<BibEntry, List<File>> retorno = executandoMetodo(BibTextVazio());
+
+        Entry<BibEntry, List<File>> entryFilePair = retorno.entrySet().iterator().next();
+        List<File> files = entryFilePair.getValue();
+        assertTrue(files.isEmpty());
+    }
+
+    /**
+     * Testa condicao citeKey != null do IF:
+     * if ((citeKey != null) && !citeKey.isEmpty())
+     *
+     */
+    @Test
+    public void autolinkBuscaChaveExataKeyNula() {
+        Globals.prefs.putBoolean(JabRefPreferences.AUTOLINK_EXACT_KEY_ONLY, Boolean.TRUE);
+
+        Map<BibEntry, List<File>> retorno = executandoMetodo(BibTextCiteKeyNull());
+
+        Entry<BibEntry, List<File>> entryFilePair = retorno.entrySet().iterator().next();
+        List<File> files = entryFilePair.getValue();
+        assertTrue(files.isEmpty());
+    }
+
+    /**
+     * Testa comportamento do metodo quando a chave e nula
+     */
+    @Test
+    public void autolinkBuscaChaveExataEntryNula() {
+        Globals.prefs.putBoolean(JabRefPreferences.AUTOLINK_EXACT_KEY_ONLY, Boolean.TRUE);
+
+        Map<BibEntry, List<File>> retorno = executandoMetodo(BibTexNull());
+
+        Entry<BibEntry, List<File>> entryFilePair = retorno.entrySet().iterator().next();
+        List<File> files = entryFilePair.getValue();
+        assertTrue(files.isEmpty());
     }
 
     /**
      * Executa  findAssociatedFiles e retorna a associacao
-     * OBS.: Achei necessario refatorar, pois uso nos dois casos de teste
+     *
+     * @param Collection<BibEntry> entries Entrada que sera utilizada para
+     *      localizar arquivo.
      */
     private Map<BibEntry, List<File>> executandoMetodo(Collection<BibEntry> entries) {
         Collection<String> extensions = new ArrayList<>();
@@ -122,12 +277,23 @@ public class FindAssociatedFilesTest {
     }
 
     /**
-     *  Gerando tres casos de entradas para testar os caminhos:
-     *      (1) Localizacao de arquivos que tem o nome que comeca com a BibTexKey
-     *      (2) Localizacao de arquivos que tem o nome exatamente igual a BibTexKey
-     *      (3) BibTexKey sem correspondencia de arquivo
-     *      (4) BibEntry sem BibTexKey
+     *  Gerando tres casos de teste das BibEntry
      */
+
+    private Collection<BibEntry> BibTexNull() {
+        Collection<BibEntry> entries = new ArrayList<>();
+        BibEntry bibTexKeyNull = null;
+        entries.add(bibTexKeyNull);
+        return entries;
+    }
+
+    private Collection<BibEntry> BibTextCiteKeyNull() {
+        Collection<BibEntry> entries = new ArrayList<>();
+        BibEntry semBibTexKey = new BibEntry("000000003", BibtexEntryTypes.ARTICLE);
+        entries.add(semBibTexKey);
+        return entries;
+    }
+
     private Collection<BibEntry> BibTextVazio() {
         Collection<BibEntry> entries = new ArrayList<>();
         BibEntry semBibTexKey = new BibEntry("000000003", BibtexEntryTypes.ARTICLE);
