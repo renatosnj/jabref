@@ -20,10 +20,6 @@ public class JabRefPreferencesTest {
         backup = preferencias;
     }
 
-    @After
-    public void tearDown() throws Exception {
-    }
-
     @Test
     public void testImportacaoPreferencias() throws JabRefException {
         File importFile = new File("src/test/resources/net/sf/jabref/customPreferences.xml");
@@ -46,7 +42,7 @@ public class JabRefPreferencesTest {
         assertEquals(JabRefPreferences.EMACS_23, "emacsUseV23InsertString");
     }
 
-    @Test
+    @Test(expected = JabRefException.class)
     public void testArquivoImportPreferences() {
         boolean test = false;
         File file = new File("jabref.xml");
@@ -66,5 +62,10 @@ public class JabRefPreferencesTest {
         JabRefPreferences.getInstance().defaults.put("FONT_FAMILY", "Arial");
         String atual = (String) JabRefPreferences.getInstance().defaults.get("FONT_FAMILY");
         assertEquals(esperado, atual);
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        preferencias.overwritePreferences(backup);
     }
 }
